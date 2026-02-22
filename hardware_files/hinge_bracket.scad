@@ -15,6 +15,7 @@ wall = 3;                // wall thickness
 m3_hole = 3.4;           // M3 clearance
 pin_hole = 3.2;          // hinge pin diameter (3mm pin + clearance)
 hole_inset = 5;          // inset from edges for mounting holes
+mount_hole_y = 5;        // Y offset for horizontal arm holes (matches base plate hinge_edge_offset)
 
 module hinge_bracket() {
     difference() {
@@ -32,8 +33,9 @@ module hinge_bracket() {
         }
 
         // Horizontal arm mounting holes (2 holes for M3 screws into base)
+        // Y offset matches base plate hinge_edge_offset for proper alignment
         for (x = [hole_inset, bracket_width - hole_inset]) {
-            translate([x, bracket_arm_l / 2, -0.5])
+            translate([x, mount_hole_y, -0.5])
                 cylinder(d=m3_hole, h=wall + 1);
         }
 

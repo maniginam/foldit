@@ -1,6 +1,10 @@
 // FoldIt Robot - Base Plate
 // Scale: 1:4 (full size 24" x 30")
 // Dimensions: 152.5mm x 190.5mm x 5mm
+//
+// PRINT SETTINGS: Print flat on bed. Use slicer elephant's foot
+// compensation (-0.2mm initial layer horizontal expansion) for
+// accurate bottom-edge dimensions and hole clearances.
 
 $fn = 40;
 

@@ -2,6 +2,14 @@
 // Overhead mount for Pi Camera v2
 // Two vertical posts with horizontal crossbar and camera mount plate
 // Scale: 1:4 (posts ~50mm tall representing ~200mm full scale)
+//
+// PRINT GUIDANCE: This model renders as one piece for visualization but
+// should be printed as separate components and assembled:
+//   1. Two post-with-foot pieces (print upright, foot on bed)
+//   2. Crossbar (print flat)
+//   3. Camera mount plate (print flat)
+// The 140mm crossbar span at 50mm height cannot bridge without supports.
+// Glue or friction-fit joints at post-to-crossbar interfaces.
 
 $fn = 40;
 

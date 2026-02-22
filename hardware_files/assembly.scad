@@ -64,30 +64,34 @@ module assembly() {
                     bottom_panel();
 
     // Hinge brackets - left edge (3 brackets)
+    // Positioned so horizontal arm holes align with base plate left edge hinge holes
+    // Base plate holes at (5, 30+i*60) and (5, 40+i*60)
     color(bracket_color) {
         for (i = [0:2]) {
-            y_pos = 25 + i * 60;
-            translate([0, y_pos, base_thickness])
+            y_pos = 30 + i * 60;
+            translate([0, y_pos + 15, base_thickness])
                 rotate([0, 0, -90])
                     hinge_bracket();
         }
     }
 
     // Hinge brackets - right edge (3 brackets)
+    // Base plate holes at (147.5, 30+i*60) and (147.5, 40+i*60)
     color(bracket_color) {
         for (i = [0:2]) {
-            y_pos = 25 + i * 60;
-            translate([base_width, y_pos, base_thickness])
+            y_pos = 30 + i * 60;
+            translate([base_width, y_pos - 5, base_thickness])
                 rotate([0, 0, 90])
                     hinge_bracket();
         }
     }
 
     // Hinge brackets - bottom edge (3 brackets)
+    // Base plate holes at (25+i*50, 5) and (35+i*50, 5)
     color(bracket_color) {
         for (i = [0:2]) {
-            x_pos = 20 + i * 50;
-            translate([x_pos, 0, base_thickness])
+            x_pos = 25 + i * 50;
+            translate([x_pos - 5, 0, base_thickness])
                 rotate([0, 0, 0])
                     hinge_bracket();
         }

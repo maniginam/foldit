@@ -13,6 +13,7 @@ panel_thickness = 3;
 // Hinge hole parameters
 m3_hole = 3.4;
 hinge_pair_gap = 10;
+hinge_edge_offset = 5;   // distance from hinge edge to hole center
 
 // Rounded edge radius
 edge_radius = 3;
@@ -26,7 +27,7 @@ module bottom_panel() {
         for (i = [0:2]) {
             x_pos = 25 + i * 50;
             for (j = [0:1]) {
-                translate([x_pos + j * hinge_pair_gap, panel_length - 5, -0.5])
+                translate([x_pos + j * hinge_pair_gap, panel_length - hinge_edge_offset, -0.5])
                     cylinder(d=m3_hole, h=panel_thickness + 1);
             }
         }

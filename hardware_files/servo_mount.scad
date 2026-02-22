@@ -25,7 +25,7 @@ bracket_inner_w = servo_body_w + bracket_clearance * 2;
 bracket_inner_l = servo_body_l + bracket_clearance * 2;
 bracket_outer_w = bracket_inner_w + wall * 2;
 bracket_outer_l = bracket_inner_l + wall * 2;
-bracket_h = servo_tab_offset + servo_tab_h + 2; // height up to tabs + a bit
+bracket_h = servo_tab_offset + servo_tab_h + 5; // height up to tabs + 5mm wall above for retention
 
 // Base plate mounting
 base_plate_w = bracket_outer_w + 16;  // extra width for mounting flanges
@@ -36,7 +36,8 @@ base_plate_h = wall;
 horn_slot_w = 8;
 horn_slot_l = 30;
 
-m3_hole = 3.4;
+m3_hole = 3.4;            // M3 clearance for base plate mounting
+m4_hole = 4.2;            // M4 clearance for servo tab screws (servo tabs are 4.8mm)
 
 module servo_mount() {
     difference() {
@@ -130,7 +131,7 @@ module _base_mounting_holes() {
 }
 
 module _servo_screw_holes() {
-    // Holes through the cradle walls that align with servo tab holes
+    // M4 holes through the cradle walls that align with servo tab holes (4.8mm)
     screw_z = base_plate_h + servo_tab_offset + servo_tab_h / 2;
     hole_y1 = wall + bracket_clearance + (servo_body_l - servo_hole_spacing) / 2;
     hole_y2 = hole_y1 + servo_hole_spacing;
@@ -139,14 +140,14 @@ module _servo_screw_holes() {
     for (y = [hole_y1, hole_y2]) {
         translate([-0.5, y, screw_z])
             rotate([0, 90, 0])
-                cylinder(d=m3_hole, h=wall + 1);
+                cylinder(d=m4_hole, h=wall + 1);
     }
 
     // Through right wall
     for (y = [hole_y1, hole_y2]) {
         translate([wall + bracket_inner_w - 0.5, y, screw_z])
             rotate([0, 90, 0])
-                cylinder(d=m3_hole, h=wall + 1);
+                cylinder(d=m4_hole, h=wall + 1);
     }
 }
 
