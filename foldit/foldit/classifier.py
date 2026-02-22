@@ -16,6 +16,8 @@ class GarmentClassifier:
             return GarmentType.UNKNOWN
 
         area = cv2.contourArea(contour)
+        if area == 0:
+            return GarmentType.UNKNOWN
         if area < GarmentClassifier.SMALL_AREA_THRESHOLD:
             return GarmentType.SMALL
 

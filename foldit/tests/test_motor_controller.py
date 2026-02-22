@@ -150,3 +150,136 @@ class TestFoldingPlatform:
         platform = FoldingPlatform(driver)
         platform.fold_bottom()
         assert gpio.pwm_instances[22].current_duty == 12.5
+
+
+class TestServoDriverValidation:
+    def test_move_to_negative_angle_raises(self):
+        from foldit.motor_controller import ServoDriver
+        gpio = FakeGPIO()
+        driver = ServoDriver(gpio)
+        driver.attach(17)
+        with pytest.raises(ValueError, match="0 and 180"):
+            driver.move_to(17, -1)
+
+    def test_move_to_angle_above_180_raises(self):
+        from foldit.motor_controller import ServoDriver
+        gpio = FakeGPIO()
+        driver = ServoDriver(gpio)
+        driver.attach(17)
+        with pytest.raises(ValueError, match="0 and 180"):
+            driver.move_to(17, 181)
+
+    def test_move_to_unattached_pin_raises(self):
+        from foldit.motor_controller import ServoDriver
+        gpio = FakeGPIO()
+        driver = ServoDriver(gpio)
+        with pytest.raises(ValueError, match="not attached"):
+            driver.move_to(99, 90)
+
+    def test_move_to_boundary_angle_0_valid(self):
+        from foldit.motor_controller import ServoDriver
+        gpio = FakeGPIO()
+        driver = ServoDriver(gpio)
+        driver.attach(17)
+        driver.move_to(17, 0)
+        assert gpio.pwm_instances[17].current_duty == 2.5
+
+    def test_move_to_boundary_angle_180_valid(self):
+        from foldit.motor_controller import ServoDriver
+        gpio = FakeGPIO()
+        driver = ServoDriver(gpio)
+        driver.attach(17)
+        driver.move_to(17, 180)
+        assert gpio.pwm_instances[17].current_duty == 12.5
+
+
+class FakePCA9685Channel:
+    def __init__(self):
+        self.duty_cycle = 0
+
+
+class FakePCA9685:
+    """Test double for PCA9685 servo driver board."""
+    def __init__(self, num_channels=16):
+        self.channels = {i: FakePCA9685Channel() for i in range(num_channels)}
+        self.deinited = False
+
+    def deinit(self):
+        self.deinited = True
+
+
+class TestPCA9685ServoDriver:
+    def test_attach_registers_channel(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        driver.attach(0)
+        driver.move_to(0, 90)
+
+    def test_move_to_angle_zero(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        driver.attach(0)
+        driver.move_to(0, 0)
+        expected = int(500 / 20000.0 * 0xFFFF)
+        assert pca.channels[0].duty_cycle == expected
+
+    def test_move_to_angle_180(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        driver.attach(0)
+        driver.move_to(0, 180)
+        expected = int(2500 / 20000.0 * 0xFFFF)
+        assert pca.channels[0].duty_cycle == expected
+
+    def test_move_to_angle_90(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        driver.attach(0)
+        driver.move_to(0, 90)
+        expected = int(1500 / 20000.0 * 0xFFFF)
+        assert pca.channels[0].duty_cycle == expected
+
+    def test_move_to_negative_angle_raises(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        driver.attach(0)
+        with pytest.raises(ValueError, match="0 and 180"):
+            driver.move_to(0, -10)
+
+    def test_move_to_angle_above_180_raises(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        driver.attach(0)
+        with pytest.raises(ValueError, match="0 and 180"):
+            driver.move_to(0, 200)
+
+    def test_move_to_unattached_channel_raises(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        with pytest.raises(ValueError, match="not attached"):
+            driver.move_to(5, 90)
+
+    def test_cleanup_deinits_board(self):
+        from foldit.motor_controller import PCA9685ServoDriver
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        driver.cleanup()
+        assert pca.deinited is True
+
+    def test_works_with_folding_platform(self):
+        from foldit.motor_controller import PCA9685ServoDriver, FoldingPlatform
+        pca = FakePCA9685()
+        driver = PCA9685ServoDriver(pca)
+        platform = FoldingPlatform(driver, left_channel=0, right_channel=1, bottom_channel=2)
+        platform.home()
+        expected_zero = int(500 / 20000.0 * 0xFFFF)
+        assert pca.channels[0].duty_cycle == expected_zero
+        assert pca.channels[1].duty_cycle == expected_zero
+        assert pca.channels[2].duty_cycle == expected_zero

@@ -64,8 +64,8 @@ class TestImagePreprocessor:
         from foldit.camera import ImagePreprocessor
         gray = np.full((480, 640), 128, dtype=np.uint8)
         binary = ImagePreprocessor.threshold(gray)
-        unique_values = np.unique(binary)
-        assert all(v in (0, 255) for v in unique_values)
+        unique_values = set(np.unique(binary))
+        assert unique_values == {255}
 
     def test_find_largest_contour_returns_contour_for_white_region(self):
         from foldit.camera import ImagePreprocessor

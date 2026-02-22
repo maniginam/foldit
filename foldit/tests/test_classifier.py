@@ -43,3 +43,9 @@ class TestGarmentClassifier:
         from foldit.classifier import GarmentClassifier
         result = GarmentClassifier.classify(None)
         assert result == "unknown"
+
+    def test_zero_area_contour_returns_unknown(self):
+        from foldit.classifier import GarmentClassifier
+        degenerate = np.array([[[0, 0]], [[0, 0]]], dtype=np.int32)
+        result = GarmentClassifier.classify(degenerate)
+        assert result == "unknown"

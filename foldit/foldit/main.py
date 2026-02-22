@@ -33,6 +33,8 @@ class FoldItRobot:
                 if result is not None:
                     folded.append(result)
                     count += 1
+        except Exception:
+            pass
         finally:
             self._camera.stop()
         return folded
