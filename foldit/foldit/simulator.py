@@ -91,20 +91,22 @@ def create_simulated_robot():
 
 
 def create_simulated_robot_v3(data_dir=None):
-    """Factory that creates a V2 robot with all V3 support objects."""
+    """Factory that creates a FoldItRobotV3 with all modules wired."""
     from foldit.camera import ImagePreprocessor
     from foldit.classifier import GarmentClassifier
     from foldit.folder import FoldSequencer
     from foldit.item_detector import ItemDetector
     from foldit.flatness import FlatnessChecker
     from foldit.motor_controller import FoldingPlatform
-    from foldit.main import FoldItRobotV2
+    from foldit.main import FoldItRobotV3
     from foldit.orientation import OrientationDetector
     from foldit.size_estimator import SizeEstimator
     from foldit.fold_verifier import FoldVerifier
     from foldit.error_recovery import ErrorRecovery
     from foldit.robot_logger import MetricsCollector, RobotLogger
     from foldit.data_collector import DataCollector
+    from foldit.frame_quality import FrameQualityChecker
+    from foldit.alerter import Alerter
 
     camera = SimulatedCamera()
     servo = SimulatedServoDriver()
@@ -116,20 +118,24 @@ def create_simulated_robot_v3(data_dir=None):
     detector = ItemDetector()
     flatness = FlatnessChecker()
 
-    robot = FoldItRobotV2(
-        camera=camera, preprocessor=preprocessor, classifier=classifier,
-        sequencer=sequencer, conveyor=conveyor, item_detector=detector,
-        flatness_checker=flatness, platform=platform,
+    robot = FoldItRobotV3(
+        camera=camera,
+        preprocessor=preprocessor,
+        classifier=classifier,
+        sequencer=sequencer,
+        conveyor=conveyor,
+        item_detector=detector,
+        flatness_checker=flatness,
+        platform=platform,
+        orientation=OrientationDetector(),
+        size_estimator=SizeEstimator(pixels_per_mm=1.0),
+        fold_verifier=FoldVerifier(camera, preprocessor, min_compactness=0.3),
+        error_recovery=ErrorRecovery(),
+        metrics=MetricsCollector(),
+        logger=RobotLogger(name="simulator"),
+        data_collector=DataCollector(output_dir=data_dir or "./data/captures", enabled=data_dir is not None),
+        frame_quality=FrameQualityChecker(),
+        alerter=Alerter(),
     )
 
-    v3_context = {
-        "orientation": OrientationDetector(),
-        "size_estimator": SizeEstimator(pixels_per_mm=1.0),
-        "fold_verifier": FoldVerifier(camera, preprocessor, min_compactness=0.3),
-        "error_recovery": ErrorRecovery(),
-        "metrics": MetricsCollector(),
-        "logger": RobotLogger(name="simulator"),
-        "data_collector": DataCollector(output_dir=data_dir or "./data/captures", enabled=data_dir is not None),
-    }
-
-    return robot, v3_context
+    return robot

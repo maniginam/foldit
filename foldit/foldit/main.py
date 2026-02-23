@@ -102,6 +102,120 @@ class FoldItRobotV2:
         return folded
 
 
+class FoldItRobotV3:
+    """V3 pipeline: full V2 pipeline + orientation, size, verification, error recovery, metrics."""
+
+    def __init__(self, camera, preprocessor, classifier, sequencer,
+                 conveyor, item_detector, flatness_checker,
+                 orientation, size_estimator, fold_verifier,
+                 error_recovery, metrics, logger, data_collector,
+                 frame_quality, alerter, platform=None):
+        self._camera = camera
+        self._preprocessor = preprocessor
+        self._classifier = classifier
+        self._sequencer = sequencer
+        self._conveyor = conveyor
+        self._detector = item_detector
+        self._flatness = flatness_checker
+        self._platform = platform
+        self._orientation = orientation
+        self._size_estimator = size_estimator
+        self._verifier = fold_verifier
+        self._recovery = error_recovery
+        self._metrics = metrics
+        self._logger = logger
+        self._data_collector = data_collector
+        self._frame_quality = frame_quality
+        self._alerter = alerter
+        self._stop_requested = False
+        self._last_orientation = None
+        self._last_size = None
+
+    def process_one(self):
+        import time
+        start = time.monotonic()
+
+        if not self._recovery.safe_advance(self._conveyor):
+            return None
+
+        frame = self._recovery.safe_capture(self._camera)
+        if frame is None:
+            return None
+
+        quality = self._frame_quality.check(frame)
+        if not quality.acceptable:
+            frame = self._recovery.safe_capture(self._camera)
+            if frame is None:
+                return None
+
+        gray = self._preprocessor.to_grayscale(frame)
+        binary = self._preprocessor.threshold(gray)
+
+        detection = self._detector.detect(binary)
+        if not detection.is_single:
+            return None
+
+        contour = detection.largest
+        if not self._flatness.is_flat(contour) and self._platform:
+            self._platform.fold_left()
+            self._platform.home()
+            self._platform.fold_right()
+            self._platform.home()
+            frame = self._recovery.safe_capture(self._camera)
+            if frame is None:
+                return None
+            gray = self._preprocessor.to_grayscale(frame)
+            binary = self._preprocessor.threshold(gray)
+            detection = self._detector.detect(binary)
+            contour = detection.largest
+
+        if contour is None:
+            return None
+
+        self._last_orientation = self._orientation.detect(contour)
+        self._last_size = self._size_estimator.estimate(contour)
+
+        garment_type = self._classifier.classify(contour)
+        self._data_collector.save(frame, garment_type)
+
+        self._sequencer.fold(garment_type, speed_factor=self._last_size.speed_factor)
+
+        verify_result = self._verifier.verify(garment_type)
+        if not verify_result.success:
+            self._sequencer.fold(garment_type, speed_factor=self._last_size.speed_factor)
+            verify_result = self._verifier.verify(garment_type)
+
+        elapsed = time.monotonic() - start
+        self._metrics.record_fold(garment_type, success=verify_result.success, cycle_sec=elapsed)
+        self._logger.log_event(
+            "fold_complete", garment=garment_type,
+            cycle_sec=round(elapsed, 2), verified=verify_result.success,
+            compactness=round(verify_result.compactness, 3),
+        )
+        self._alerter.check(garment_type, success=verify_result.success)
+
+        return garment_type
+
+    def run(self, max_items=None):
+        self._camera.start()
+        folded = []
+        try:
+            count = 0
+            while (max_items is None or count < max_items) and not self._stop_requested:
+                result = self.process_one()
+                if result is not None:
+                    folded.append(result)
+                    count += 1
+        except Exception:
+            pass
+        finally:
+            self._camera.stop()
+        return folded
+
+    def stop(self):
+        self._stop_requested = True
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="FoldIt Robot Controller")
@@ -111,16 +225,10 @@ def main():
 
     if args.simulate:
         from foldit.simulator import create_simulated_robot_v3
-        import time
-        robot, ctx = create_simulated_robot_v3()
-        for i in range(args.items):
-            start = time.monotonic()
-            result = robot.process_one()
-            elapsed = time.monotonic() - start
-            if result:
-                ctx["metrics"].record_fold(result, success=True, cycle_sec=elapsed)
-                ctx["logger"].log_event("fold_complete", garment=result, cycle_sec=round(elapsed, 2))
-        print(ctx["metrics"].snapshot())
+        robot = create_simulated_robot_v3()
+        folded = robot.run(max_items=args.items)
+        print(f"Folded {len(folded)} items: {folded}")
+        print(f"Metrics: {robot._metrics.snapshot()}")
 
 
 if __name__ == "__main__":
