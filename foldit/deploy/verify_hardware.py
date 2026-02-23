@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """FoldIt Robot - Hardware Verification Script
 
-Tests I2C bus, servo motors, and camera to verify hardware connections.
-Run after setup_pi.sh to confirm everything is wired correctly.
+Tests I2C bus, servo motors, camera, ultrasonic sensor, and conveyor motor
+to verify hardware connections. Run after setup_pi.sh to confirm everything
+is wired correctly.
 """
 
 import sys
@@ -13,6 +14,11 @@ SWEEP_ANGLES = [0, 90, 180, 0]
 SWEEP_DELAY = 0.5
 TEST_IMAGE_PATH = "/tmp/test_frame.jpg"
 PCA9685_ADDRESS = 0x40
+TRIGGER_PIN = 5
+ECHO_PIN = 6
+MOTOR_PIN_A = 23
+MOTOR_PIN_B = 24
+MOTOR_ENABLE_PIN = 25
 
 
 def test_i2c():
@@ -119,6 +125,107 @@ def test_camera():
         return False
 
 
+def test_ultrasonic():
+    """Test HC-SR04 ultrasonic distance sensor on GPIO pins 5 (trigger) and 6 (echo)."""
+    print("\n[TEST] Ultrasonic Sensor (HC-SR04)")
+    print("-" * 40)
+    try:
+        import RPi.GPIO as GPIO
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(TRIGGER_PIN, GPIO.OUT)
+        GPIO.setup(ECHO_PIN, GPIO.IN)
+
+        GPIO.output(TRIGGER_PIN, False)
+        time.sleep(0.1)
+
+        GPIO.output(TRIGGER_PIN, True)
+        time.sleep(0.00001)
+        GPIO.output(TRIGGER_PIN, False)
+
+        timeout = time.monotonic() + 0.1
+        pulse_start = time.monotonic()
+        while GPIO.input(ECHO_PIN) == 0:
+            pulse_start = time.monotonic()
+            if pulse_start > timeout:
+                GPIO.cleanup([TRIGGER_PIN, ECHO_PIN])
+                print("  No echo response (timeout waiting for pulse start)")
+                print("  [FAIL] Ultrasonic")
+                return False
+
+        timeout = time.monotonic() + 0.1
+        pulse_end = time.monotonic()
+        while GPIO.input(ECHO_PIN) == 1:
+            pulse_end = time.monotonic()
+            if pulse_end > timeout:
+                GPIO.cleanup([TRIGGER_PIN, ECHO_PIN])
+                print("  Echo stuck high (timeout waiting for pulse end)")
+                print("  [FAIL] Ultrasonic")
+                return False
+
+        distance = (pulse_end - pulse_start) * 17150
+        GPIO.cleanup([TRIGGER_PIN, ECHO_PIN])
+
+        if 2 <= distance <= 400:
+            print(f"  Distance reading: {distance:.1f} cm")
+            print("  [PASS] Ultrasonic")
+            return True
+
+        print(f"  Distance out of range: {distance:.1f} cm (expected 2-400)")
+        print("  [FAIL] Ultrasonic")
+        return False
+    except Exception as e:
+        try:
+            import RPi.GPIO as GPIO
+            GPIO.cleanup([TRIGGER_PIN, ECHO_PIN])
+        except Exception:
+            pass
+        print(f"  Error: {e}")
+        print("  [FAIL] Ultrasonic")
+        return False
+
+
+def test_conveyor_motor():
+    """Test L298N motor driver with DC conveyor motor on GPIO pins 23, 24, 25."""
+    print("\n[TEST] Conveyor Motor (L298N)")
+    print("-" * 40)
+    try:
+        import RPi.GPIO as GPIO
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(MOTOR_PIN_A, GPIO.OUT)
+        GPIO.setup(MOTOR_PIN_B, GPIO.OUT)
+        GPIO.setup(MOTOR_ENABLE_PIN, GPIO.OUT)
+
+        pwm = GPIO.PWM(MOTOR_ENABLE_PIN, 1000)
+        pwm.start(0)
+
+        print("  Running motor forward at 50% for 1 second...", flush=True)
+        GPIO.output(MOTOR_PIN_A, GPIO.HIGH)
+        GPIO.output(MOTOR_PIN_B, GPIO.LOW)
+        pwm.ChangeDutyCycle(50)
+        time.sleep(1)
+
+        pwm.ChangeDutyCycle(0)
+        GPIO.output(MOTOR_PIN_A, GPIO.LOW)
+        GPIO.output(MOTOR_PIN_B, GPIO.LOW)
+        pwm.stop()
+
+        GPIO.cleanup([MOTOR_PIN_A, MOTOR_PIN_B, MOTOR_ENABLE_PIN])
+        print("  Motor ran and stopped successfully")
+        print("  [PASS] Conveyor Motor")
+        return True
+    except Exception as e:
+        try:
+            import RPi.GPIO as GPIO
+            GPIO.cleanup([MOTOR_PIN_A, MOTOR_PIN_B, MOTOR_ENABLE_PIN])
+        except Exception:
+            pass
+        print(f"  Error: {e}")
+        print("  [FAIL] Conveyor Motor")
+        return False
+
+
 def main():
     print("=" * 40)
     print(" FoldIt Hardware Verification")
@@ -128,6 +235,8 @@ def main():
         "I2C / PCA9685": test_i2c(),
         "Servo Motors": test_servos(),
         "Camera": test_camera(),
+        "Ultrasonic Sensor": test_ultrasonic(),
+        "Conveyor Motor": test_conveyor_motor(),
     }
 
     print("\n" + "=" * 40)

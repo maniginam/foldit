@@ -37,7 +37,7 @@ log "Camera enabled."
 # 4. Install system packages
 log "Installing system packages..."
 apt-get update -qq
-apt-get install -y -qq python3-venv python3-pip python3-opencv libopencv-dev i2c-tools
+apt-get install -y -qq python3-venv python3-pip python3-opencv libopencv-dev i2c-tools libatlas-base-dev libcap-dev libcamera-dev
 log "System packages installed."
 
 # 5. Create project directory
@@ -64,7 +64,9 @@ log "Installing Python dependencies..."
     numpy \
     adafruit-circuitpython-pca9685 \
     adafruit-circuitpython-motor \
-    picamera2
+    picamera2 \
+    tflite-runtime \
+    RPi.GPIO
 chown -R pi:pi "$INSTALL_DIR"
 log "Python dependencies installed."
 
