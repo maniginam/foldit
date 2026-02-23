@@ -106,12 +106,21 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="FoldIt Robot Controller")
     parser.add_argument("--simulate", action="store_true", help="Run in simulator mode without hardware")
+    parser.add_argument("--items", type=int, default=1, help="Number of items to process in simulate mode")
     args = parser.parse_args()
 
     if args.simulate:
-        from foldit.simulator import create_simulated_robot
-        robot = create_simulated_robot()
-        robot.run(max_items=1)
+        from foldit.simulator import create_simulated_robot_v3
+        import time
+        robot, ctx = create_simulated_robot_v3()
+        for i in range(args.items):
+            start = time.monotonic()
+            result = robot.process_one()
+            elapsed = time.monotonic() - start
+            if result:
+                ctx["metrics"].record_fold(result, success=True, cycle_sec=elapsed)
+                ctx["logger"].log_event("fold_complete", garment=result, cycle_sec=round(elapsed, 2))
+        print(ctx["metrics"].snapshot())
 
 
 if __name__ == "__main__":
