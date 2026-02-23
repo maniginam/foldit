@@ -1,5 +1,6 @@
 """Flask web dashboard for monitoring the FoldIt robot."""
-from flask import Flask, jsonify
+import json
+from flask import Flask, jsonify, request, Response
 
 
 DASHBOARD_HTML = """<!DOCTYPE html>
@@ -12,15 +13,19 @@ h1 { color: #00d4ff; }
 .stat { font-size: 24px; color: #00d4ff; }
 .label { color: #a0a0a0; font-size: 14px; }
 #status, #metrics { white-space: pre; }
+#events { max-height: 200px; overflow-y: auto; }
+.event { padding: 2px 0; border-bottom: 1px solid #2a2a4e; }
 </style>
 </head>
 <body>
 <h1>FoldIt Robot Dashboard</h1>
 <div class="card"><div class="label">Status</div><div id="status">Loading...</div></div>
 <div class="card"><div class="label">Metrics</div><div id="metrics">Loading...</div></div>
+<div class="card"><div class="label">Live Events</div><div id="events"></div></div>
 <div class="card">
 <button onclick="fetch('/api/control/start',{method:'POST'})">Start</button>
 <button onclick="fetch('/api/control/stop',{method:'POST'})">Stop</button>
+<button onclick="fetch('/api/control/shutdown',{method:'POST'})">Shutdown</button>
 </div>
 <script>
 function update() {
@@ -32,11 +37,21 @@ function update() {
   });
 }
 update(); setInterval(update, 5000);
+if (typeof EventSource !== 'undefined') {
+  var es = new EventSource('/api/events');
+  es.onmessage = function(e) {
+    var div = document.getElementById('events');
+    var item = document.createElement('div');
+    item.className = 'event';
+    item.textContent = e.data;
+    div.insertBefore(item, div.firstChild);
+  };
+}
 </script>
 </body></html>"""
 
 
-def create_app(metrics, state_dict, metrics_store=None):
+def create_app(metrics, state_dict, metrics_store=None, event_stream=None):
     """Create Flask app with metrics and state references."""
     app = Flask(__name__)
 
@@ -58,11 +73,42 @@ def create_app(metrics, state_dict, metrics_store=None):
 
     @app.route("/api/metrics/history")
     def metrics_history():
-        from flask import request
         minutes = request.args.get("minutes", 60, type=int)
         if metrics_store:
             return jsonify(metrics_store.query_recent(minutes=minutes))
         return jsonify([])
+
+    @app.route("/api/metrics/export")
+    def metrics_export():
+        fmt = request.args.get("format", "json")
+        snapshot = metrics.snapshot()
+        recent = metrics_store.query_recent(minutes=60) if metrics_store else []
+        if fmt == "prometheus":
+            lines = [
+                f"# HELP foldit_total_folds Total number of folds",
+                f"# TYPE foldit_total_folds gauge",
+                f"foldit_total_folds {snapshot.get('total_folds', 0)}",
+                f"# HELP foldit_success_rate Fold success rate",
+                f"# TYPE foldit_success_rate gauge",
+                f"foldit_success_rate {snapshot.get('success_rate', 0.0)}",
+                f"# HELP foldit_avg_cycle_sec Average fold cycle time in seconds",
+                f"# TYPE foldit_avg_cycle_sec gauge",
+                f"foldit_avg_cycle_sec {snapshot.get('avg_cycle_sec', 0.0)}",
+            ]
+            return Response("\n".join(lines) + "\n", mimetype="text/plain")
+        return jsonify({"summary": snapshot, "recent": recent})
+
+    @app.route("/api/events")
+    def events():
+        if not event_stream:
+            return jsonify([])
+
+        def generate():
+            event = event_stream.pop(timeout=0.1)
+            if event:
+                yield f"data: {json.dumps(event)}\n\n"
+
+        return Response(generate(), mimetype="text/event-stream")
 
     @app.route("/api/control/start", methods=["POST"])
     def control_start():
@@ -72,6 +118,13 @@ def create_app(metrics, state_dict, metrics_store=None):
     @app.route("/api/control/stop", methods=["POST"])
     def control_stop():
         state_dict["state"] = state_dict.get("stop_callback", lambda: None)() or state_dict["state"]
+        return jsonify({"status": "ok"})
+
+    @app.route("/api/control/shutdown", methods=["POST"])
+    def control_shutdown():
+        callback = state_dict.get("shutdown_callback")
+        if callback:
+            callback()
         return jsonify({"status": "ok"})
 
     return app

@@ -98,3 +98,76 @@ class TestDashboardHistory:
             assert response.status_code == 200
             data = json.loads(response.data)
             assert len(data) == 2
+
+
+class TestDashboardSSE:
+    def _make_app_with_stream(self):
+        from foldit.dashboard import create_app
+        from foldit.event_stream import EventStream
+        from foldit.error_recovery import RobotState
+        metrics = FakeMetricsForDashboard()
+        state = {"state": RobotState.IDLE, "uptime_sec": 0}
+        stream = EventStream()
+        app = create_app(metrics, state, event_stream=stream)
+        app.config["TESTING"] = True
+        return app, stream
+
+    def test_events_endpoint_exists(self):
+        app, stream = self._make_app_with_stream()
+        stream.push({"type": "fold", "garment": "shirt"})
+        with app.test_client() as client:
+            resp = client.get("/api/events")
+            assert resp.status_code == 200
+
+
+class TestDashboardExport:
+    def _make_app_with_store(self):
+        from foldit.dashboard import create_app
+        from foldit.error_recovery import RobotState
+        metrics = FakeMetricsForDashboard()
+        store = FakeMetricsStoreForDashboard()
+        state = {"state": RobotState.IDLE, "uptime_sec": 0}
+        app = create_app(metrics, state, metrics_store=store)
+        app.config["TESTING"] = True
+        return app
+
+    def test_export_returns_json(self):
+        app = self._make_app_with_store()
+        with app.test_client() as client:
+            resp = client.get("/api/metrics/export")
+            assert resp.status_code == 200
+            data = json.loads(resp.data)
+            assert "summary" in data
+            assert "recent" in data
+
+    def test_export_prometheus_format(self):
+        app = self._make_app_with_store()
+        with app.test_client() as client:
+            resp = client.get("/api/metrics/export?format=prometheus")
+            assert resp.status_code == 200
+            text = resp.data.decode()
+            assert "foldit_total_folds" in text
+            assert "foldit_success_rate" in text
+
+
+class TestDashboardShutdown:
+    def _make_app_with_stop(self):
+        from foldit.dashboard import create_app
+        from foldit.error_recovery import RobotState
+        metrics = FakeMetricsForDashboard()
+        stopped = {"flag": False}
+        state = {
+            "state": RobotState.IDLE,
+            "uptime_sec": 0,
+            "shutdown_callback": lambda: stopped.update(flag=True),
+        }
+        app = create_app(metrics, state)
+        app.config["TESTING"] = True
+        return app, stopped
+
+    def test_shutdown_endpoint(self):
+        app, stopped = self._make_app_with_stop()
+        with app.test_client() as client:
+            resp = client.post("/api/control/shutdown")
+            assert resp.status_code == 200
+            assert stopped["flag"] is True
