@@ -1,0 +1,57 @@
+# FoldIt Robot Default Configuration
+# Copy to config.yaml and customize as needed.
+
+conveyor:
+  detection_distance_cm: 10.0
+  belt_speed_duty: 75
+  settle_time_sec: 0.5
+
+servo:
+  fold_angle: 180
+  home_angle: 0
+  step_delay_sec: 0.02
+  pwm_frequency_hz: 50
+
+camera:
+  resolution: [640, 480]
+  framerate: 30
+
+classifier:
+  confidence_threshold: 0.5
+  min_confidence: 0.7
+  model_path: null
+  small_area_threshold: 15000
+  pants_ratio_threshold: 0.6
+  shirt_ratio_threshold: 1.2
+
+fold_verify:
+  enabled: true
+  max_retries: 1
+
+logging:
+  level: INFO
+  file: null
+
+dashboard:
+  enabled: false
+  port: 5000
+  api_key: null
+
+data_collection:
+  enabled: false
+  output_dir: ./data/captures
+
+frame_quality:
+  min_blur_score: 100.0
+  min_contrast: 30.0
+  min_brightness: 40.0
+  max_brightness: 220.0
+
+alerting:
+  consecutive_fail_threshold: 3
+  rate_window: 20
+  min_success_rate: 0.5
+  webhook_url: null
+
+metrics_store:
+  db_path: data/metrics.db
