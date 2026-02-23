@@ -34,6 +34,8 @@ DEFAULTS = {
         "small_area_threshold": 15000,
         "pants_ratio_threshold": 0.6,
         "shirt_ratio_threshold": 1.2,
+        "model_path": None,
+        "min_confidence": 0.7,
     },
     "fold_verify": {
         "enabled": True,
@@ -46,6 +48,7 @@ DEFAULTS = {
     "dashboard": {
         "enabled": False,
         "port": 5000,
+        "api_key": None,
     },
     "data_collection": {
         "enabled": False,
@@ -61,6 +64,7 @@ DEFAULTS = {
         "consecutive_fail_threshold": 3,
         "rate_window": 20,
         "min_success_rate": 0.5,
+        "webhook_url": None,
     },
     "metrics_store": {
         "db_path": "data/metrics.db",
@@ -71,12 +75,23 @@ DEFAULTS = {
 class ConfigLoader:
     """Loads YAML config with fallback to config.py defaults."""
 
-    def __init__(self, path="./config.yaml"):
+    def __init__(self, path="./config.yaml", default_path=None):
         self._path = path
+        self._default_path = default_path
         self._config = None
 
     def load(self):
         self._config = copy.deepcopy(DEFAULTS)
+
+        if self._default_path:
+            try:
+                with open(self._default_path, "r") as f:
+                    defaults_yaml = yaml.safe_load(f)
+                if defaults_yaml and isinstance(defaults_yaml, dict):
+                    self._merge(self._config, defaults_yaml)
+            except FileNotFoundError:
+                pass
+
         try:
             with open(self._path, "r") as f:
                 overrides = yaml.safe_load(f)

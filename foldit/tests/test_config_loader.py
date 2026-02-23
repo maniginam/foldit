@@ -95,3 +95,29 @@ class TestConfigLoaderV4Sections:
         loader = ConfigLoader(path="/nonexistent/config.yaml")
         config = loader.load()
         assert config["metrics_store"]["db_path"] == "data/metrics.db"
+
+
+class TestConfigLoaderV5Sections:
+    def test_classifier_model_path_default(self):
+        from foldit.config_loader import ConfigLoader
+        loader = ConfigLoader(path="/nonexistent/config.yaml")
+        config = loader.load()
+        assert config["classifier"]["model_path"] is None
+
+    def test_classifier_min_confidence_default(self):
+        from foldit.config_loader import ConfigLoader
+        loader = ConfigLoader(path="/nonexistent/config.yaml")
+        config = loader.load()
+        assert config["classifier"]["min_confidence"] == 0.7
+
+    def test_dashboard_api_key_default(self):
+        from foldit.config_loader import ConfigLoader
+        loader = ConfigLoader(path="/nonexistent/config.yaml")
+        config = loader.load()
+        assert config["dashboard"]["api_key"] is None
+
+    def test_alerting_webhook_url_default(self):
+        from foldit.config_loader import ConfigLoader
+        loader = ConfigLoader(path="/nonexistent/config.yaml")
+        config = loader.load()
+        assert config["alerting"]["webhook_url"] is None
