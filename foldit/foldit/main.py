@@ -38,3 +38,65 @@ class FoldItRobot:
         finally:
             self._camera.stop()
         return folded
+
+
+class FoldItRobotV2:
+    """V2 pipeline: conveyor -> detect -> multi-check -> flatten -> classify -> fold."""
+
+    def __init__(self, camera, preprocessor, classifier, sequencer,
+                 conveyor, item_detector, flatness_checker, platform=None):
+        self._camera = camera
+        self._preprocessor = preprocessor
+        self._classifier = classifier
+        self._sequencer = sequencer
+        self._conveyor = conveyor
+        self._detector = item_detector
+        self._flatness = flatness_checker
+        self._platform = platform
+
+    def process_one(self):
+        if not self._conveyor.advance_to_fold_zone():
+            return None
+
+        frame = self._camera.capture_frame()
+        gray = self._preprocessor.to_grayscale(frame)
+        binary = self._preprocessor.threshold(gray)
+
+        detection = self._detector.detect(binary)
+        if not detection.is_single:
+            return None
+
+        contour = detection.largest
+        if not self._flatness.is_flat(contour) and self._platform:
+            self._platform.fold_left()
+            self._platform.home()
+            self._platform.fold_right()
+            self._platform.home()
+            frame = self._camera.capture_frame()
+            gray = self._preprocessor.to_grayscale(frame)
+            binary = self._preprocessor.threshold(gray)
+            detection = self._detector.detect(binary)
+            contour = detection.largest
+
+        if contour is None:
+            return None
+
+        garment_type = self._classifier.classify(contour)
+        self._sequencer.fold(garment_type)
+        return garment_type
+
+    def run(self, max_items=None):
+        self._camera.start()
+        folded = []
+        try:
+            count = 0
+            while max_items is None or count < max_items:
+                result = self.process_one()
+                if result is not None:
+                    folded.append(result)
+                    count += 1
+        except Exception:
+            pass
+        finally:
+            self._camera.stop()
+        return folded
