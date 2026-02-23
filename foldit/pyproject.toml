@@ -1,6 +1,6 @@
 [project]
 name = "foldit"
-version = "0.1.0"
+version = "0.2.0"
 description = "Clothes folding robot algorithm"
 requires-python = ">=3.11"
 dependencies = [
@@ -8,6 +8,8 @@ dependencies = [
     "numpy>=1.24.0",
     "RPi.GPIO>=0.7.1",
     "picamera2>=0.3.12",
+    "flask>=3.0.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
