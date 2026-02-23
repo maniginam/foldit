@@ -37,3 +37,15 @@ class GarmentType:
     TOWEL = "towel"
     SMALL = "small"  # socks, underwear
     UNKNOWN = "unknown"
+
+
+class ConveyorConfig:
+    """Conveyor belt motor and sensor settings."""
+    MOTOR_PIN_A = 23
+    MOTOR_PIN_B = 24
+    MOTOR_ENABLE_PIN = 25
+    TRIGGER_PIN = 5
+    ECHO_PIN = 6
+    DETECTION_DISTANCE_CM = 10.0
+    BELT_SPEED_DUTY = 75
+    SETTLE_TIME_SEC = 0.5
