@@ -100,3 +100,19 @@ class FoldItRobotV2:
         finally:
             self._camera.stop()
         return folded
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="FoldIt Robot Controller")
+    parser.add_argument("--simulate", action="store_true", help="Run in simulator mode without hardware")
+    args = parser.parse_args()
+
+    if args.simulate:
+        from foldit.simulator import create_simulated_robot
+        robot = create_simulated_robot()
+        robot.run(max_items=1)
+
+
+if __name__ == "__main__":
+    main()
