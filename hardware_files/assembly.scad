@@ -10,6 +10,9 @@ use <bottom_panel.scad>
 use <hinge_bracket.scad>
 use <servo_mount.scad>
 use <camera_gantry.scad>
+use <belt_frame.scad>
+use <motor_mount_conv.scad>
+use <sensor_bracket.scad>
 
 $fn = 40;
 
@@ -32,6 +35,9 @@ bottom_color = [0.9, 0.6, 0.3, 0.8];
 bracket_color = [0.4, 0.4, 0.4, 1.0];
 servo_color = [0.2, 0.2, 0.2, 1.0];
 gantry_color = [0.5, 0.5, 0.5, 1.0];
+conveyor_color = [0.3, 0.4, 0.5, 0.9];
+motor_color = [0.2, 0.3, 0.2, 1.0];
+sensor_color = [0.1, 0.5, 0.4, 1.0];
 
 // Fold angles (0 = flat/home, 180 = fully folded)
 left_fold_angle = 0;    // Change to animate folding
@@ -118,6 +124,24 @@ module assembly() {
     color(gantry_color)
         translate([(base_width - 160) / 2, base_length - 30, base_thickness])
             camera_gantry();
+
+    // Conveyor belt frame - at front/intake edge, extending outward
+    // Frame rear mounting tabs attach to base plate front edge (y=0)
+    color(conveyor_color)
+        translate([0, -60, 0])
+            belt_frame();
+
+    // Conveyor motor mount - on right side wall of belt frame
+    color(motor_color)
+        translate([base_width - 3, -60 + 60 - 6, 10])
+            rotate([0, 0, 90])
+                motor_mount_conv();
+
+    // Ultrasonic sensor bracket - at belt exit, facing down toward detection zone
+    color(sensor_color)
+        translate([base_width / 2 - 9, -3, base_thickness])
+            rotate([0, 0, 180])
+                sensor_bracket();
 }
 
 // Render the full assembly
