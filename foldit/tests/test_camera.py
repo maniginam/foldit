@@ -80,3 +80,68 @@ class TestImagePreprocessor:
         binary = np.zeros((480, 640), dtype=np.uint8)
         contour = ImagePreprocessor.find_largest_contour(binary)
         assert contour is None
+
+
+class TestAdaptivePreprocessor:
+    def test_capture_background_stores_frame(self):
+        from foldit.camera import AdaptivePreprocessor
+        bg = np.full((480, 640, 3), 100, dtype=np.uint8)
+        proc = AdaptivePreprocessor(bg)
+        assert proc._background is not None
+        assert proc._background.shape == (480, 640)
+
+    def test_subtract_background_isolates_foreground(self):
+        from foldit.camera import AdaptivePreprocessor
+        bg = np.full((480, 640, 3), 100, dtype=np.uint8)
+        proc = AdaptivePreprocessor(bg)
+        frame = np.full((480, 640, 3), 100, dtype=np.uint8)
+        frame[200:300, 200:400] = 200
+        result = proc.subtract_background(frame)
+        assert result[250, 300] > 0
+        assert result[0, 0] == 0
+
+    def test_adaptive_threshold_returns_binary(self):
+        from foldit.camera import AdaptivePreprocessor
+        bg = np.zeros((480, 640, 3), dtype=np.uint8)
+        proc = AdaptivePreprocessor(bg)
+        gray = np.full((480, 640), 128, dtype=np.uint8)
+        binary = proc.adaptive_threshold(gray)
+        unique = np.unique(binary)
+        assert all(v in (0, 255) for v in unique)
+
+    def test_preprocess_full_pipeline(self):
+        from foldit.camera import AdaptivePreprocessor
+        bg = np.full((480, 640, 3), 50, dtype=np.uint8)
+        proc = AdaptivePreprocessor(bg)
+        frame = np.full((480, 640, 3), 50, dtype=np.uint8)
+        frame[100:300, 100:400] = 200
+        contour = proc.preprocess(frame)
+        assert contour is not None
+
+    def test_preprocess_no_garment_returns_none(self):
+        from foldit.camera import AdaptivePreprocessor
+        bg = np.full((480, 640, 3), 100, dtype=np.uint8)
+        proc = AdaptivePreprocessor(bg)
+        frame = np.full((480, 640, 3), 100, dtype=np.uint8)
+        contour = proc.preprocess(frame)
+        assert contour is None
+
+    def test_find_all_contours_returns_list(self):
+        from foldit.camera import AdaptivePreprocessor
+        bg = np.zeros((480, 640, 3), dtype=np.uint8)
+        proc = AdaptivePreprocessor(bg)
+        binary = np.zeros((480, 640), dtype=np.uint8)
+        binary[50:150, 50:150] = 255
+        binary[300:400, 300:450] = 255
+        contours = proc.find_all_contours(binary, min_area=1000)
+        assert len(contours) == 2
+
+    def test_find_all_contours_filters_small(self):
+        from foldit.camera import AdaptivePreprocessor
+        bg = np.zeros((480, 640, 3), dtype=np.uint8)
+        proc = AdaptivePreprocessor(bg)
+        binary = np.zeros((480, 640), dtype=np.uint8)
+        binary[50:150, 50:150] = 255
+        binary[300:310, 300:310] = 255
+        contours = proc.find_all_contours(binary, min_area=1000)
+        assert len(contours) == 1

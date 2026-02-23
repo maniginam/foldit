@@ -44,3 +44,36 @@ class ImagePreprocessor:
         if not contours:
             return None
         return max(contours, key=cv2.contourArea)
+
+
+class AdaptivePreprocessor:
+    """Adaptive image preprocessing with background subtraction."""
+
+    def __init__(self, background_frame):
+        self._background = cv2.cvtColor(background_frame, cv2.COLOR_BGR2GRAY)
+
+    def subtract_background(self, frame):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        diff = cv2.absdiff(gray, self._background)
+        _, mask = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
+        return mask
+
+    def adaptive_threshold(self, gray_image):
+        return cv2.adaptiveThreshold(
+            gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY, 11, 2
+        )
+
+    def preprocess(self, frame):
+        mask = self.subtract_background(frame)
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
+        return max(contours, key=cv2.contourArea)
+
+    def find_all_contours(self, binary_image, min_area=5000):
+        contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        return [c for c in contours if cv2.contourArea(c) >= min_area]
