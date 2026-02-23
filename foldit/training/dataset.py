@@ -7,6 +7,25 @@ import cv2
 import numpy as np
 
 
+def augment_image(image, seed=None):
+    """Apply random augmentation: rotation, flip, brightness jitter."""
+    rng = random.Random(seed)
+    result = image.copy()
+
+    angle = rng.uniform(-15, 15)
+    h, w = result.shape[:2]
+    matrix = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)
+    result = cv2.warpAffine(result, matrix, (w, h), borderMode=cv2.BORDER_REFLECT)
+
+    if rng.random() > 0.5:
+        result = cv2.flip(result, 1)
+
+    factor = rng.uniform(0.8, 1.2)
+    result = np.clip(result.astype(np.float32) * factor, 0, 255).astype(np.uint8)
+
+    return result
+
+
 class DatasetSplitter:
     """Splits labeled data into train/val/test sets and loads images."""
 
@@ -31,7 +50,7 @@ class DatasetSplitter:
         val_end = train_end + int(n * val)
         return rows[:train_end], rows[train_end:val_end], rows[val_end:]
 
-    def load_images(self, rows, size=(224, 224)):
+    def load_images(self, rows, size=(224, 224), augment=False):
         images = []
         labels = []
         for row in rows:
@@ -39,6 +58,8 @@ class DatasetSplitter:
             if img is None:
                 continue
             img = cv2.resize(img, size)
+            if augment:
+                img = augment_image(img)
             images.append(img)
             labels.append(row["label"])
         return np.array(images), labels
