@@ -36,7 +36,7 @@ update(); setInterval(update, 5000);
 </body></html>"""
 
 
-def create_app(metrics, state_dict):
+def create_app(metrics, state_dict, metrics_store=None):
     """Create Flask app with metrics and state references."""
     app = Flask(__name__)
 
@@ -55,6 +55,14 @@ def create_app(metrics, state_dict):
     @app.route("/api/metrics")
     def metrics_endpoint():
         return jsonify(metrics.snapshot())
+
+    @app.route("/api/metrics/history")
+    def metrics_history():
+        from flask import request
+        minutes = request.args.get("minutes", 60, type=int)
+        if metrics_store:
+            return jsonify(metrics_store.query_recent(minutes=minutes))
+        return jsonify([])
 
     @app.route("/api/control/start", methods=["POST"])
     def control_start():
