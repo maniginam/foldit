@@ -76,7 +76,7 @@ class TestHybridClassifier:
         hybrid = HybridClassifier(ml, heuristic)
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
         contour = np.array([[[100,100]],[[500,100]],[[500,400]],[[100,400]]], dtype=np.int32)
-        result = hybrid.classify(frame, contour)
+        result = hybrid.classify(contour, frame=frame)
         assert result == "pants"
 
     def test_falls_back_to_heuristic_when_not_confident(self):
@@ -89,7 +89,7 @@ class TestHybridClassifier:
         hybrid = HybridClassifier(ml, heuristic)
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
         contour = np.array([[[100,100]],[[500,100]],[[500,300]],[[100,300]]], dtype=np.int32)
-        result = hybrid.classify(frame, contour)
+        result = hybrid.classify(contour, frame=frame)
         assert result == "shirt"
 
     def test_falls_back_when_ml_raises(self):
@@ -102,5 +102,5 @@ class TestHybridClassifier:
         interp.invoke = lambda: (_ for _ in ()).throw(RuntimeError("model error"))
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
         contour = np.array([[[100,100]],[[500,100]],[[500,300]],[[100,300]]], dtype=np.int32)
-        result = hybrid.classify(frame, contour)
+        result = hybrid.classify(contour, frame=frame)
         assert result == "shirt"

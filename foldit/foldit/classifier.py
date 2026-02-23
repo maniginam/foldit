@@ -10,8 +10,7 @@ class GarmentClassifier:
     PANTS_RATIO_THRESHOLD = 0.6
     SHIRT_RATIO_THRESHOLD = 1.2
 
-    @staticmethod
-    def classify(contour):
+    def classify(self, contour, frame=None):
         if contour is None:
             return GarmentType.UNKNOWN
 

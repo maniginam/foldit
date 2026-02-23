@@ -105,7 +105,7 @@ class CameraCalibrator:
         result = {"contour_found": contour is not None}
 
         if contour is not None:
-            garment_type = GarmentClassifier.classify(contour)
+            garment_type = GarmentClassifier().classify(contour)
             area = cv2.contourArea(contour)
             x, y, w, h = cv2.boundingRect(contour)
 

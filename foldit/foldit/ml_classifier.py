@@ -67,11 +67,12 @@ class HybridClassifier:
         self._ml = ml_classifier
         self._heuristic = heuristic_classifier
 
-    def classify(self, frame, contour):
-        try:
-            result = self._ml.classify_frame(frame)
-            if result.garment_type != GarmentType.UNKNOWN:
-                return result.garment_type
-        except Exception:
-            pass
+    def classify(self, contour, frame=None):
+        if frame is not None:
+            try:
+                result = self._ml.classify_frame(frame)
+                if result.garment_type != GarmentType.UNKNOWN:
+                    return result.garment_type
+            except Exception:
+                pass
         return self._heuristic.classify(contour)

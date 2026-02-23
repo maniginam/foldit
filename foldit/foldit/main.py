@@ -175,7 +175,7 @@ class FoldItRobotV3:
         self._last_orientation = self._orientation.detect(contour)
         self._last_size = self._size_estimator.estimate(contour)
 
-        garment_type = self._classifier.classify(contour)
+        garment_type = self._classifier.classify(contour, frame=frame)
         self._data_collector.save(frame, garment_type)
 
         self._sequencer.fold(garment_type, speed_factor=self._last_size.speed_factor)
@@ -219,16 +219,46 @@ class FoldItRobotV3:
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="FoldIt Robot Controller")
-    parser.add_argument("--simulate", action="store_true", help="Run in simulator mode without hardware")
-    parser.add_argument("--items", type=int, default=1, help="Number of items to process in simulate mode")
+    subparsers = parser.add_subparsers(dest="command")
+
+    run_parser = subparsers.add_parser("run", help="Run the robot")
+    run_parser.add_argument("--simulate", action="store_true", help="Run in simulator mode")
+    run_parser.add_argument("--items", type=int, default=1, help="Number of items to process")
+
+    subparsers.add_parser("dashboard", help="Start the web dashboard")
+    subparsers.add_parser("calibrate", help="Run auto-calibration")
+
+    train_parser = subparsers.add_parser("train", help="Train ML classifier")
+    train_parser.add_argument("--csv", required=False, help="Path to labels.csv")
+    train_parser.add_argument("--output", default="models", help="Output directory")
+
     args = parser.parse_args()
 
-    if args.simulate:
-        from foldit.simulator import create_simulated_robot_v3
-        robot = create_simulated_robot_v3()
-        folded = robot.run(max_items=args.items)
-        print(f"Folded {len(folded)} items: {folded}")
-        print(f"Metrics: {robot._metrics.snapshot()}")
+    if args.command == "run" or args.command is None:
+        simulate = getattr(args, "simulate", False)
+        items = getattr(args, "items", 1)
+        if simulate:
+            from foldit.simulator import create_simulated_robot_v3
+            robot = create_simulated_robot_v3()
+            folded = robot.run(max_items=items)
+            print(f"Folded {len(folded)} items: {folded}")
+            print(f"Metrics: {robot._metrics.snapshot()}")
+    elif args.command == "dashboard":
+        from foldit.dashboard import create_app
+        from foldit.robot_logger import MetricsCollector
+        from foldit.error_recovery import RobotState
+        metrics = MetricsCollector()
+        state = {"state": RobotState.IDLE, "uptime_sec": 0}
+        app = create_app(metrics, state)
+        app.run(port=5000)
+    elif args.command == "calibrate":
+        print("Place reference object (credit card) on belt and press Enter...")
+    elif args.command == "train":
+        from training.train import train
+        if args.csv:
+            train(args.csv, args.output)
+        else:
+            print("Usage: foldit train --csv path/to/labels.csv")
 
 
 if __name__ == "__main__":
