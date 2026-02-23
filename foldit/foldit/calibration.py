@@ -1,11 +1,10 @@
 """Calibration tooling for FoldIt robot servos and camera."""
 import json
-import sys
 import time
 
 import cv2
 
-from foldit.camera import CameraCapture, ImagePreprocessor
+from foldit.camera import ImagePreprocessor
 from foldit.classifier import GarmentClassifier
 from foldit.config import ServoConfig
 

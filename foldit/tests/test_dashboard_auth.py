@@ -1,5 +1,4 @@
 """Tests for dashboard API key authentication."""
-import json
 
 
 class FakeMetricsForAuth:

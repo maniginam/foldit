@@ -85,14 +85,14 @@ def create_app(metrics, state_dict, metrics_store=None, event_stream=None):
         recent = metrics_store.query_recent(minutes=60) if metrics_store else []
         if fmt == "prometheus":
             lines = [
-                f"# HELP foldit_total_folds Total number of folds",
-                f"# TYPE foldit_total_folds gauge",
+                "# HELP foldit_total_folds Total number of folds",
+                "# TYPE foldit_total_folds gauge",
                 f"foldit_total_folds {snapshot.get('total_folds', 0)}",
-                f"# HELP foldit_success_rate Fold success rate",
-                f"# TYPE foldit_success_rate gauge",
+                "# HELP foldit_success_rate Fold success rate",
+                "# TYPE foldit_success_rate gauge",
                 f"foldit_success_rate {snapshot.get('success_rate', 0.0)}",
-                f"# HELP foldit_avg_cycle_sec Average fold cycle time in seconds",
-                f"# TYPE foldit_avg_cycle_sec gauge",
+                "# HELP foldit_avg_cycle_sec Average fold cycle time in seconds",
+                "# TYPE foldit_avg_cycle_sec gauge",
                 f"foldit_avg_cycle_sec {snapshot.get('avg_cycle_sec', 0.0)}",
             ]
             return Response("\n".join(lines) + "\n", mimetype="text/plain")

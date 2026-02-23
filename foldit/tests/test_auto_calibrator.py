@@ -1,5 +1,4 @@
 """Tests for automatic pixels_per_mm calibration."""
-import json
 import os
 import tempfile
 import numpy as np

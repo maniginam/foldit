@@ -1,5 +1,4 @@
 """Validate a TFLite garment classifier model."""
-import os
 import sys
 
 

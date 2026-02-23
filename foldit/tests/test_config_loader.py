@@ -61,7 +61,7 @@ class TestConfigLoader:
     def test_get_nested_value(self):
         from foldit.config_loader import ConfigLoader
         loader = ConfigLoader(path="/nonexistent/config.yaml")
-        config = loader.load()
+        loader.load()
         assert loader.get("conveyor.detection_distance_cm") == 10.0
         assert loader.get("servo.fold_angle") == 180
 

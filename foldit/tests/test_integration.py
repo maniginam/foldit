@@ -13,11 +13,6 @@ class TestV3Integration:
         from foldit.item_detector import ItemDetector
         from foldit.flatness import FlatnessChecker
         from foldit.motor_controller import FoldingPlatform
-        from foldit.orientation import OrientationDetector
-        from foldit.size_estimator import SizeEstimator
-        from foldit.fold_verifier import FoldVerifier
-        from foldit.error_recovery import ErrorRecovery
-        from foldit.robot_logger import MetricsCollector
         from foldit.main import FoldItRobotV2
 
         camera = SimulatedCamera()

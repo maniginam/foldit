@@ -1,7 +1,6 @@
 """Tests for dataset packaging."""
 import os
 import tempfile
-import csv
 import numpy as np
 import cv2
 

@@ -1,6 +1,5 @@
 """Tests for garment classifier."""
 import numpy as np
-import cv2
 
 
 def _make_contour(width, height, x=100, y=100):

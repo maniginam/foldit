@@ -1,9 +1,6 @@
 """Tests for the frame labeling tool."""
 import os
-import csv
 import tempfile
-import numpy as np
-import cv2
 
 
 class TestLabelTool:

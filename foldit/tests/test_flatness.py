@@ -1,6 +1,5 @@
 """Tests for wrinkle/flatness detection."""
 import numpy as np
-import cv2
 
 
 class TestFlatnessChecker:

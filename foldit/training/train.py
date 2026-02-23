@@ -24,9 +24,9 @@ def train(csv_path, output_dir="models", epochs=20, batch_size=16):
     val_images, val_labels = splitter.load_images(val_rows, size=(224, 224))
 
     label_set = sorted(set(train_labels))
-    label_to_idx = {l: i for i, l in enumerate(label_set)}
-    train_y = tf.keras.utils.to_categorical([label_to_idx[l] for l in train_labels], len(label_set))
-    val_y = tf.keras.utils.to_categorical([label_to_idx[l] for l in val_labels], len(label_set))
+    label_to_idx = {label: i for i, label in enumerate(label_set)}
+    train_y = tf.keras.utils.to_categorical([label_to_idx[label] for label in train_labels], len(label_set))
+    val_y = tf.keras.utils.to_categorical([label_to_idx[label] for label in val_labels], len(label_set))
 
     train_x = tf.keras.applications.mobilenet_v2.preprocess_input(train_images.astype("float32"))
     val_x = tf.keras.applications.mobilenet_v2.preprocess_input(val_images.astype("float32"))
