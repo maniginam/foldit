@@ -70,3 +70,28 @@ class TestConfigLoader:
         loader = ConfigLoader(path="/nonexistent/config.yaml")
         loader.load()
         assert loader.get("nonexistent.key", default=42) == 42
+
+
+class TestConfigLoaderV4Sections:
+    def test_frame_quality_defaults(self):
+        from foldit.config_loader import ConfigLoader
+        loader = ConfigLoader(path="/nonexistent/config.yaml")
+        config = loader.load()
+        assert config["frame_quality"]["min_blur_score"] == 100.0
+        assert config["frame_quality"]["min_contrast"] == 30.0
+        assert config["frame_quality"]["min_brightness"] == 40.0
+        assert config["frame_quality"]["max_brightness"] == 220.0
+
+    def test_alerting_defaults(self):
+        from foldit.config_loader import ConfigLoader
+        loader = ConfigLoader(path="/nonexistent/config.yaml")
+        config = loader.load()
+        assert config["alerting"]["consecutive_fail_threshold"] == 3
+        assert config["alerting"]["rate_window"] == 20
+        assert config["alerting"]["min_success_rate"] == 0.5
+
+    def test_metrics_store_defaults(self):
+        from foldit.config_loader import ConfigLoader
+        loader = ConfigLoader(path="/nonexistent/config.yaml")
+        config = loader.load()
+        assert config["metrics_store"]["db_path"] == "data/metrics.db"

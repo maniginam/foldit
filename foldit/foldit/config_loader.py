@@ -51,6 +51,20 @@ DEFAULTS = {
         "enabled": False,
         "output_dir": "./data/captures",
     },
+    "frame_quality": {
+        "min_blur_score": 100.0,
+        "min_contrast": 30.0,
+        "min_brightness": 40.0,
+        "max_brightness": 220.0,
+    },
+    "alerting": {
+        "consecutive_fail_threshold": 3,
+        "rate_window": 20,
+        "min_success_rate": 0.5,
+    },
+    "metrics_store": {
+        "db_path": "data/metrics.db",
+    },
 }
 
 
