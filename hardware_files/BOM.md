@@ -25,8 +25,13 @@
 | 1.11 | Camera Ribbon Cable (300mm or 610mm) | 1 | $4.00 | $4.00 | Adafruit / Amazon | Stock cable is 150mm. Longer cable needed if camera gantry is elevated above base. 300mm usually sufficient for prototype. |
 | 1.12 | 5mm LED (green) + 220 Ohm Resistor | 2 | $0.50 | $1.00 | Amazon / DigiKey | Optional status indicator. Green = ready, red = error. Can substitute with NeoPixel for multi-color on one GPIO pin. |
 | 1.13 | Capacitor 1000uF 10V (electrolytic) | 1 | $0.50 | $0.50 | DigiKey / Amazon | Place across servo power rail on PCA9685 to absorb voltage spikes during servo startup. Strongly recommended. |
+| 1.14 | L298N Motor Driver Module | 1 | $3.00 | $3.00 | Amazon | Dual H-bridge. Controls conveyor DC motor direction/speed. IN1→GPIO23, IN2→GPIO24, ENA→GPIO25 (PWM). |
+| 1.15 | HC-SR04 Ultrasonic Sensor | 1 | $2.00 | $2.00 | Amazon | Detects garment arrival at fold zone. Trig→GPIO5, Echo→GPIO6 (via voltage divider). 5V logic — requires 1kΩ+2kΩ voltage divider on Echo for 3.3V Pi GPIO. |
+| 1.16 | 12V DC Gear Motor (N20 or similar) | 1 | $8.00 | $8.00 | Amazon / AliExpress | Drives conveyor belt. Powered via L298N OUT1/OUT2. 12V from main power rail. |
+| 1.17 | Conveyor Belt (silicone/rubber) | 1 | $5.00 | $5.00 | Amazon / AliExpress | Sized to match folding surface width. Silicone preferred for garment grip. |
+| 1.18 | Aluminum Rollers 6mm dia | 2 | $2.00 | $4.00 | Amazon / hobby shop | Drive and idler rollers for conveyor belt. 6mm diameter, cut to belt width. |
 
-**Electronics Subtotal: $158.50**
+**Electronics Subtotal: $180.50**
 
 ---
 
@@ -90,11 +95,11 @@ All parts printed at 1:4 scale for prototyping. Estimated print times and filame
 
 | Category | Subtotal |
 |----------|----------|
-| 1. Electronics | $158.50 |
+| 1. Electronics | $180.50 |
 | 2. Mechanical Hardware | $12.50 |
 | 3. 3D-Printed Parts (filament) | $27.80 |
 | 4. Optional / Recommended | $40.00 |
-| **Estimated Total** | **$238.80** |
+| **Estimated Total** | **$260.80** |
 
 > **Notes:**
 > - Prices are estimates as of February 2026 and may vary by supplier and region.

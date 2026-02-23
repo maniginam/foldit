@@ -109,6 +109,53 @@
              Signal (orange/white) ← CH2 S
              Power  (red)          ← V+ rail
              Ground (brown/black)  ← GND rail
+
+
+    CONVEYOR BELT SUBSYSTEM
+    ════════════════════════
+
+    Raspberry Pi GPIO ──────────────────────────────────────────────┐
+      Pin 16 [GPIO23] ─────────────────────► L298N IN1             │
+      Pin 18 [GPIO24] ─────────────────────► L298N IN2             │
+      Pin 22 [GPIO25] ─────────────────────► L298N ENA (PWM speed) │
+      Pin 29 [GPIO5]  ─────────────────────► HC-SR04 Trig          │
+      Pin 31 [GPIO6]  ◄── Voltage Divider ── HC-SR04 Echo          │
+                                                                    │
+    ┌─────────────────────────────────┐                             │
+    │         L298N MOTOR DRIVER      │                             │
+    │                                  │                             │
+    │  IN1  ◄── GPIO23                │                             │
+    │  IN2  ◄── GPIO24                │                             │
+    │  ENA  ◄── GPIO25 (PWM)          │                             │
+    │  +12V ◄── 12V power rail        │                             │
+    │  GND  ──► Common GND            │                             │
+    │                                  │                             │
+    │  OUT1 ──┬──► DC Gear Motor (+)  │                             │
+    │  OUT2 ──┘──► DC Gear Motor (-)  │                             │
+    └─────────────────────────────────┘                             │
+                                                                    │
+    ┌─────────────────────────────────┐                             │
+    │       HC-SR04 ULTRASONIC        │                             │
+    │                                  │                             │
+    │  VCC  ◄── 5V (Pi Pin 2)        │                             │
+    │  Trig ◄── GPIO5                 │                             │
+    │  Echo ──► 1kΩ ──┬──► GPIO6      │    ⚠ VOLTAGE DIVIDER       │
+    │                  │               │    Echo outputs 5V;        │
+    │                  2kΩ             │    Pi GPIO max is 3.3V.    │
+    │                  │               │    1kΩ + 2kΩ divider       │
+    │                  GND             │    gives ~3.3V output.     │
+    │  GND  ──► Common GND            │                             │
+    └─────────────────────────────────┘                             │
+                                                                    │
+    ┌─────────────────────────────────┐                             │
+    │     12V DC GEAR MOTOR (N20)     │                             │
+    │                                  │                             │
+    │  (+) ◄── L298N OUT1             │                             │
+    │  (-) ◄── L298N OUT2             │                             │
+    │                                  │                             │
+    │  Drives conveyor belt via       │                             │
+    │  6mm aluminum rollers           │                             │
+    └─────────────────────────────────┘                             │
 ```
 
 ### Simplified Block Diagram
@@ -136,10 +183,29 @@
                            │   │  CH0 ──► Servo L   │
      Common GND ◄──────────┘   │  CH1 ──► Servo R   │
      (Pi GND + PSU GND         │  CH2 ──► Servo B   │
-      + PCA9685 GND)           └────────────────────┘
-                                        │
+      + PCA9685 GND            └────────────────────┘
+      + L298N GND)                      │
                                    1000uF cap
                                    across V+/GND
+
+                        CONVEYOR SUBSYSTEM
+                        ──────────────────
+                                │  GPIO23 (IN1)
+                                │  GPIO24 (IN2)
+  ┌──────────────┐              │  GPIO25 (ENA/PWM)
+  │ 12V rail     │──► +12V ────►│
+  │ (shared PSU) │              ┌───────────────────┐
+  └──────────────┘              │   L298N Driver     │
+                                │   OUT1/OUT2 ───────┼──► 12V DC Gear Motor
+                                └───────────────────┘      │
+                                                      Conveyor Belt + Rollers
+
+                                │  GPIO5 (Trig)
+                                │  GPIO6 (Echo, via divider)
+                                ┌───────────────────┐
+  Pi 5V ────────────────────────│   HC-SR04 Sensor   │
+                                │   (garment detect) │
+                                └───────────────────┘
 ```
 
 ---
@@ -182,6 +248,19 @@
 | 1000uF Cap | (-) | PCA9685 GND rail | -- | Must be rated >= 10V |
 | **6V/5A PSU** | V+ | PCA9685 V+ terminal | Red (thick) | Dedicated servo power |
 | 6V/5A PSU | GND | Common GND bus | Black (thick) | MUST tie to Pi GND |
+| **L298N Motor Driver** | IN1 | Pi Pin 16 (GPIO23) | Green | Motor direction control A |
+| L298N Motor Driver | IN2 | Pi Pin 18 (GPIO24) | Green | Motor direction control B |
+| L298N Motor Driver | ENA | Pi Pin 22 (GPIO25) | Blue | PWM speed control (duty cycle sets belt speed) |
+| L298N Motor Driver | +12V | 12V power rail | Red (thick) | Motor power input, from shared 12V supply |
+| L298N Motor Driver | GND | Common GND bus | Black | Shared ground with Pi and other components |
+| L298N Motor Driver | OUT1 | DC gear motor (+) | Red | Motor output A |
+| L298N Motor Driver | OUT2 | DC gear motor (-) | Black | Motor output B |
+| **HC-SR04 Sensor** | VCC | Pi Pin 2 (5V) | Red | Sensor power (5V required) |
+| HC-SR04 Sensor | Trig | Pi Pin 29 (GPIO5) | Orange | Trigger pulse output (3.3V safe, sensor accepts 3.3V triggers) |
+| HC-SR04 Sensor | Echo | 1kΩ resistor → GPIO6 junction | Yellow | Echo return signal. **MUST** use voltage divider: 1kΩ from Echo to GPIO6, 2kΩ from GPIO6 to GND. Drops 5V Echo to ~3.3V for Pi GPIO safety. |
+| HC-SR04 Sensor | GND | Common GND bus | Black | Shared ground |
+| **12V DC Gear Motor** | (+) | L298N OUT1 | Red | Motor terminal A |
+| 12V DC Gear Motor | (-) | L298N OUT2 | Black | Motor terminal B |
 
 ---
 
@@ -197,6 +276,9 @@
 | MG996R servo x1 | 6V | 10 mA | 500 mA | 2500 mA | Stall current per servo |
 | MG996R servo x3 | 6V | 30 mA | 1500 mA | 7500 mA | All 3 servos worst case |
 | Status LED | 3.3V | 0 mA | 10 mA | 10 mA | Via 330 ohm resistor |
+| L298N motor driver | 5V (logic) | 0 mA | 36 mA | 36 mA | Logic supply from Pi 5V; motor power from 12V rail |
+| HC-SR04 ultrasonic sensor | 5V | 2 mA | 15 mA | 15 mA | Powered from Pi 5V pin |
+| 12V DC gear motor (via L298N) | 12V | 0 mA | 200 mA | 800 mA | N20 gear motor, varies by load |
 
 ### Power Supply Requirements
 
@@ -209,11 +291,12 @@
 
 | Rail | Typical Draw | Peak Draw |
 |------|-------------|-----------|
-| 5V (Pi) rail | ~1.0A (5W) | ~1.2A (6W) |
+| 5V (Pi) rail | ~1.1A (5.5W) | ~1.3A (6.5W) |
 | 6V (Servo) rail | ~1.5A (9W) | ~7.5A (45W) |
-| **System total** | **~14W typical** | **~51W peak** |
+| 12V (Conveyor motor) rail | ~0.2A (2.4W) | ~0.8A (9.6W) |
+| **System total** | **~17W typical** | **~61W peak** |
 
-> **Note:** Peak draw occurs only if all three servos stall simultaneously, which should not happen during normal operation. The 1000uF capacitor on the servo rail handles brief current spikes during servo startup.
+> **Note:** Peak draw occurs only if all three servos stall simultaneously, which should not happen during normal operation. The 1000uF capacitor on the servo rail handles brief current spikes during servo startup. The conveyor motor draws from the 12V rail (shared with the main 12V supply or a separate adapter); peak motor draw occurs under heavy load or stall.
 
 ---
 
@@ -241,6 +324,13 @@
 - The Pi GND, PCA9685 GND, and servo power supply GND **must** all be connected together
 - Without a common ground, I2C communication will be unreliable and PWM signals will not reference correctly
 - Use a GND bus or star-ground topology from a single point
+
+### HC-SR04 Echo Voltage Divider (Required)
+- The HC-SR04 Echo pin outputs **5V** logic, but the Pi GPIO pins are rated for **3.3V max**
+- Connecting Echo directly to a Pi GPIO pin will damage the Pi
+- **Required:** Use a resistive voltage divider: 1kΩ from Echo to GPIO6, 2kΩ from GPIO6 to GND
+- This produces ~3.3V at GPIO6: 5V × 2kΩ / (1kΩ + 2kΩ) = 3.33V
+- Use 1% tolerance metal film resistors for accuracy
 
 ### General Electrical Safety
 - Keep servo power wiring (16-18 AWG) separate from signal wiring where possible

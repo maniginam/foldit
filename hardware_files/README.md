@@ -15,8 +15,11 @@
 | `hinge_bracket.scad` | L-shaped hinge bracket | 9 | 3 per panel edge (left, right, bottom) |
 | `servo_mount.scad` | MG996R servo mount | 3 | One per folding panel |
 | `camera_gantry.scad` | Camera gantry | 1 | Overhead Pi Camera v2 mount |
+| `belt_frame.scad` | Conveyor belt frame | 1 | Mounts to base plate front edge, holds rollers and belt |
+| `motor_mount_conv.scad` | Conveyor motor mount | 1 | Mounts N20 DC gear motor to belt frame |
+| `sensor_bracket.scad` | HC-SR04 sensor bracket | 1 | Mounts ultrasonic sensor above fold zone |
 
-**Total printed parts: 17**
+**Total printed parts: 20**
 
 ## Recommended Print Settings
 
@@ -54,6 +57,13 @@
 | MG996R servo motors | - | 3 | Panel actuation |
 | Raspberry Pi Camera v2 | - | 1 | Vision system |
 | Rubber feet / standoffs | - | 4 | Base plate feet |
+| L298N motor driver module | - | 1 | Conveyor motor control |
+| HC-SR04 ultrasonic sensor | - | 1 | Garment detection at fold zone |
+| 12V DC gear motor (N20) | - | 1 | Conveyor belt drive |
+| Conveyor belt (silicone/rubber) | - | 1 | Garment transport |
+| Aluminum rollers 6mm dia | 6mm x belt width | 2 | Drive and idler rollers |
+| 1kΩ resistor | 1/4W | 1 | HC-SR04 voltage divider |
+| 2kΩ resistor | 1/4W | 1 | HC-SR04 voltage divider |
 
 ## Assembly Order
 
@@ -90,7 +100,17 @@
 3. Mount the Pi Camera v2 to the camera mount plate using M2 screws and nuts
 4. Ensure the camera lens points straight down through the center hole
 
-### Step 7: Install feet
+### Step 7: Assemble conveyor belt system
+1. Insert 6mm aluminum rollers into the roller brackets (drive roller and idler roller)
+2. Mount roller brackets to the conveyor frame using M3 x 8mm screws
+3. Loop the conveyor belt around both rollers and adjust idler position for proper tension
+4. Mount the N20 DC motor into the motor mount bracket, aligning shaft with the drive roller
+5. Attach the conveyor frame to the base plate behind the folding surface area using M3 x 10mm screws
+6. Mount the HC-SR04 sensor bracket above the fold zone, angled downward toward the belt
+7. Wire the L298N: IN1→GPIO23, IN2→GPIO24, ENA→GPIO25, +12V→power rail, GND→common ground, OUT1/OUT2→motor
+8. Wire the HC-SR04: VCC→5V, Trig→GPIO5, Echo→1kΩ→GPIO6 (with 2kΩ from GPIO6 to GND), GND→common ground
+
+### Step 8: Install feet
 1. Attach rubber feet or standoffs to the four corner holes of the base plate
 
 ## Assembly Visualization

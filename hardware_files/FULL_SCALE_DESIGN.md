@@ -87,6 +87,68 @@ This document describes the design path from the current 1:4 scale 3D-printed pr
 
 ---
 
+## 3.5 Conveyor Feed System
+
+### Overview
+
+The conveyor belt system automatically feeds garments onto the folding surface, enabling continuous batch folding without manual garment placement. It uses an L298N motor driver to control a 12V DC gear motor, and an HC-SR04 ultrasonic sensor to detect when a garment has arrived at the fold zone.
+
+### Components
+
+| Component | Specification | Purpose |
+|-----------|--------------|---------|
+| L298N motor driver | Dual H-bridge, 12V, 2A per channel | Controls motor direction and speed via PWM |
+| HC-SR04 ultrasonic sensor | 2cm-400cm range, 5V logic | Detects garment presence at fold zone |
+| 12V DC gear motor (N20) | 12V, ~200mA typical | Drives the conveyor belt |
+| Conveyor belt | Silicone/rubber, continuous loop | Transports garments to folding surface |
+| Aluminum rollers (6mm dia) | 2x, cut to belt width | Drive roller + idler roller |
+
+### Belt Design
+
+- **Belt width:** Should match or slightly exceed the folding surface width (~24") to handle full-size garments
+- **Belt material:** Silicone or rubber provides garment grip and resists wear; food-grade silicone belts work well
+- **Belt length:** Determined by roller spacing; minimum ~18" between rollers for garment loading area
+- **Tension:** Idler roller position adjustable for belt tensioning; use slotted mounting holes
+
+### Motor and Roller Placement
+
+```
+    FOLDING SURFACE                CONVEYOR FEED
+    ┌──────────────┐    ┌─────────────────────────────┐
+    │              │    │                               │
+    │  Fold zone   │◄───│  Belt direction ──────►       │
+    │              │    │                               │
+    └──────────────┘    │  ┌─────┐           ┌─────┐  │
+                        │  │Drive│           │Idler│  │
+                        │  │Roller│           │Roller│  │
+                        │  │(motor)│          │(free)│  │
+                        │  └─────┘           └─────┘  │
+                        └─────────────────────────────┘
+                              ▲
+                         Motor mounted
+                         underneath frame
+```
+
+- **Drive roller:** Positioned at the fold-zone end, coupled to the DC motor via shaft or belt drive
+- **Idler roller:** Free-spinning at the loading end, adjustable for belt tension
+- **Motor mount:** Beneath the frame, accessible for maintenance
+
+### Sensor Mounting
+
+- HC-SR04 mounted above the fold zone, pointing downward at the belt surface
+- Detection distance configured to ~10cm (triggers when garment passes beneath)
+- Mount should allow angle adjustment for reliable detection
+- Keep sensor wiring away from motor power wires to reduce electrical noise
+
+### Electrical Integration
+
+- L298N powered from the existing 12V rail (shared with main power supply via buck converters)
+- HC-SR04 powered from Pi 5V pin
+- HC-SR04 Echo pin requires a 1kΩ + 2kΩ voltage divider (5V → 3.3V) for Pi GPIO safety
+- GPIO connections: IN1→GPIO23, IN2→GPIO24, ENA→GPIO25 (PWM), Trig→GPIO5, Echo→GPIO6
+
+---
+
 ## 4. Servos / Actuators
 
 ### Servo Selection
@@ -274,20 +336,20 @@ At full scale, direct-drive servo horns may not provide enough mechanical advant
 | 18 | Rubber feet / vibration dampeners | 4 | $2 | $8 | Frame feet |
 | 19 | Camera ribbon cable (610mm) | 1 | $5 | $5 | Extended length for tall gantry |
 | 20 | Wide-angle lens for Pi Camera (optional) | 1 | $10 | $10 | Better FOV coverage |
+| 21 | L298N motor driver module | 1 | $3 | $3 | Conveyor motor control |
+| 22 | HC-SR04 ultrasonic sensor | 1 | $2 | $2 | Garment detection at fold zone |
+| 23 | 12V DC gear motor (N20 or similar) | 1 | $8 | $8 | Conveyor belt drive motor |
+| 24 | Conveyor belt (silicone/rubber, 24" wide) | 1 | $15 | $15 | Full-scale belt, wider than prototype |
+| 25 | Aluminum rollers 6mm dia (cut to width) | 2 | $4 | $8 | Drive and idler rollers |
+| 26 | 1kΩ + 2kΩ resistors (voltage divider) | 1 set | $1 | $1 | HC-SR04 Echo level shifting |
 | | | | | | |
-| | **Estimated Total** | | | **$382** | |
+| | **Estimated Total** | | | **$419** | |
 
-> **Cost range: ~$380-$550** depending on supplier, shipping, and optional upgrades (35kg servos, aluminum panels, additional cameras). Reusing the Pi, PCA9685, and camera from the prototype saves ~$86.
+> **Cost range: ~$420-$590** depending on supplier, shipping, and optional upgrades (35kg servos, aluminum panels, additional cameras). Reusing the Pi, PCA9685, and camera from the prototype saves ~$86. The conveyor belt cost scales with width — full-scale 24" belts are more expensive than prototype-scale.
 
 ---
 
 ## 10. Future Enhancements
-
-### Conveyor Feed System
-- Add a motorized belt or roller system to feed garments onto the folding surface automatically
-- Enables continuous batch folding without manual garment placement
-- Requires an additional stepper motor, driver (e.g., A4988), and belt mechanism
-- Estimated addition: $40-60
 
 ### Second Camera for Edge Detection
 - Mount a side-angle or low-angle camera to detect garment edges and thickness
