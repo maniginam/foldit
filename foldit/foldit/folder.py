@@ -17,12 +17,16 @@ class FoldSequencer:
     def __init__(self, platform):
         self._platform = platform
 
-    def fold(self, garment_type):
+    def fold(self, garment_type, speed_factor=1.0):
         steps = FOLD_SEQUENCES.get(
             garment_type, FOLD_SEQUENCES[GarmentType.UNKNOWN]
         )
         self._platform.home()
         for step in steps:
-            getattr(self._platform, step)()
+            method = getattr(self._platform, step)
+            try:
+                method(delay_factor=speed_factor)
+            except TypeError:
+                method()
             self._platform.home()
         return garment_type
